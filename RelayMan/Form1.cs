@@ -16,6 +16,14 @@ namespace RelayMan {
         public bool[] Relays = new bool[RelayCount];
         public List<String> CommandQueue = new List<string>();
 
+        // command line parameter properties
+        private int comPort { get; set; }
+        private int relay { get; set; }
+        private int duration { get; set; }
+        private bool setOn { get; set; }
+        private int delay { get; set; }
+        private bool runFromCmdLine { get; set; }
+
         public frmMain() {
             InitializeComponent();
             string[] args = Environment.GetCommandLineArgs();
@@ -35,6 +43,80 @@ namespace RelayMan {
                 comboBoxPorts.Enabled = false;
                 btnOpen.Enabled = false;
             }
+
+            DisplayCmdLinArgs( args );
+            if ( ParseCmdLineArgs( args ) ) {
+                runFromCmdLine = true;
+            }
+        }
+
+        private void RunCmdLineArgs() {
+            // pause for delay seconds if specified
+            if ( delay > 0 ) {
+                System.Threading.Thread.Sleep( delay * 1000 );
+            }
+
+            // grab the com port
+            if ( serialPort.IsOpen ) {
+                serialPort.Close();
+            }
+            serialPort.PortName = "COM" + comPort.ToString();
+            serialPort.Open();
+
+            // fire command
+            SendCommand( ( setOn ? "N" : "F" ) + relay.ToString() );
+
+            // hang on for duration seconds
+            if ( duration > 0 ) {
+                System.Threading.Thread.Sleep( duration * 1000 );
+                SendCommand( ( setOn ? "F" : "N" ) + relay.ToString() );   // toggle command previously set
+            }
+        }
+
+        private bool ParseCmdLineArgs( string[] args ) {
+            // parse args
+            // looking for following key words: 
+            /*  relay=n (where n in range 1 - 8)
+             *  set=on/off 
+             *  duration=nn (where nn = number of seconds)
+             *  comport=nn (where nn = com port number to use)
+             *  allon (switch all relays on) 
+             *  alloff (switch all relays off)
+             *  delay=nn (delay for nn seconds before running commands)
+             */
+
+            foreach ( string arg in args ) {
+                if ( arg.ToLower().Contains( "comport=" ) ) {
+                    comPort = Convert.ToInt32( arg.Substring( arg.LastIndexOf( "=" ) + 1 ) );
+                }
+
+                if ( arg.ToLower().Contains( "relay=" ) ) {
+                    relay = Convert.ToInt32( arg.Substring( arg.LastIndexOf( "=" ) + 1 ) );
+                }
+
+                if ( arg.ToLower().Contains( "duration=" ) ) {
+                    duration = Convert.ToInt32( arg.Substring( arg.LastIndexOf( "=" ) + 1 ) );
+                }
+
+                if ( arg.ToLower().Contains( "set=" ) ) {
+                    setOn = arg.Substring( arg.LastIndexOf( "=" ) + 1 ) == "on";
+                }
+
+                if ( arg.ToLower().Contains( "delay=" ) ) {
+                    delay = Convert.ToInt32( arg.Substring( arg.LastIndexOf( "=" ) + 1 ) );
+                }
+
+            }
+            return ( comPort > 0 && relay > 0 );
+
+        }
+
+        private void DisplayCmdLinArgs( string[] args ) {
+            if ( args.Length > 0 ) {
+                for ( int i = 0; i < args.Length; i++ ) {
+                    listBoxCmdLineParams.Items.Add( "Param " + i.ToString() + ":  " + args[i] );
+                }
+            }
         }
 
         private void btnOpen_Click( object sender, EventArgs e ) {
@@ -44,27 +126,15 @@ namespace RelayMan {
             serialPort.PortName = comboBoxPorts.SelectedItem.ToString();
             serialPort.Open();
             panel1.Visible = serialPort.IsOpen;
-
             GetRelayStatus();
         }
 
         private void GetRelayStatus() {
+            // sends "S0" to the relay box which will cause it to respond with a status code of two bytes representing a hex value
+            // this is decoded when the message response comes in via the DataReceived delegate and its dependents
             if ( serialPort.IsOpen ) {
                 serialPort.Write( "S0" );
                 serialPort.Write( new byte[] { 13, 10 }, 0, 2 );
-            }
-        }
-
-        private void UpdateRelayBox() {
-            if ( !serialPort.IsOpen )
-                return;
-            string s;
-            for ( int i = 0; i < Relays.Length; i++ ) {
-                if ( Relays[i] ) {
-                    s = Relays[i] ? "N" : "F" + ( i + 1 ).ToString();
-                    serialPort.WriteLine( s );
-                    serialPort.Write( new byte[] { 13, 10 }, 0, 2 );
-                }
             }
         }
 
@@ -81,16 +151,18 @@ namespace RelayMan {
             if ( RxString[RxString.Length - 1] == '#' ) {       // # == end of command response
                 CommandQueue.Add( LastCommand );
                 LastCommand = string.Empty;
+                tbResponse.AppendText( "\r\n" );
                 ShowRelayStatus();
             }
         }
 
         private void ShowRelayStatus() {
-            // get the next command from the queue (FIFO)            
-            // if it's an "S0" command, update the relay status, otherwise ignore it
-            int status = 0;
+            int status;
             string statusHex;
+
+            // get the next command from the queue (FIFO)                        
             if ( CommandQueue.Count > 0 ) {
+                // if it's an "S0" command, update the relay status, otherwise ignore it
                 if ( CommandQueue[0][0] == 'S' && CommandQueue[0][1] == '0' ) {
                     statusHex = ( CommandQueue[0][4] ).ToString() + ( CommandQueue[0][5] ).ToString();
                     status = Convert.ToInt32( statusHex, 16 );
@@ -129,9 +201,11 @@ namespace RelayMan {
                     radioButton15.Checked = Relays[7];
                     radioButton16.Checked = !Relays[7];
                 }
-                else
+                else {
+                    // if a command has been processed, force a status update
                     GetRelayStatus();
-
+                }
+                // take this command off the queue and consider it dealt with
                 CommandQueue.RemoveAt( 0 );
             }
         }
@@ -168,16 +242,17 @@ namespace RelayMan {
             }
         }
 
+        private void btnClear_Click( object sender, EventArgs e ) {
+            tbResponse.Clear();
+        }
+
+        // individual buttons handlers section
         private void btnAllOn_Click( object sender, EventArgs e ) {
             SendCommand( "N0" );
         }
 
         private void btnAllOff_Click( object sender, EventArgs e ) {
             SendCommand( "F0" );
-        }
-
-        private void btnClear_Click( object sender, EventArgs e ) {
-            tbResponse.Clear();
         }
 
         private void radioButton1_Click( object sender, EventArgs e ) {
@@ -243,6 +318,15 @@ namespace RelayMan {
         private void radioButton16_Click( object sender, EventArgs e ) {
             SendCommand( "F8" );
         }
+
+        private void frmMain_Load( object sender, EventArgs e ) {
+            if ( runFromCmdLine ) {
+                RunCmdLineArgs();
+                serialPort.Close();
+                Application.Exit();
+            }
+        }
+
 
     }
 }

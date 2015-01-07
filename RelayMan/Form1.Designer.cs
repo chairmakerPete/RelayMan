@@ -58,6 +58,7 @@
             this.panel1 = new System.Windows.Forms.Panel();
             this.btnClear = new System.Windows.Forms.Button();
             this.lblNoComPortsFound = new System.Windows.Forms.Label();
+            this.listBoxCmdLineParams = new System.Windows.Forms.ListBox();
             this.groupBox1.SuspendLayout();
             this.groupBox2.SuspendLayout();
             this.groupBox3.SuspendLayout();
@@ -83,7 +84,7 @@
             // 
             // btnOpen
             // 
-            this.btnOpen.Location = new System.Drawing.Point(36, 24);
+            this.btnOpen.Location = new System.Drawing.Point(29, 24);
             this.btnOpen.Name = "btnOpen";
             this.btnOpen.Size = new System.Drawing.Size(127, 32);
             this.btnOpen.TabIndex = 0;
@@ -97,7 +98,7 @@
             this.tbResponse.Location = new System.Drawing.Point(17, 198);
             this.tbResponse.Multiline = true;
             this.tbResponse.Name = "tbResponse";
-            this.tbResponse.Size = new System.Drawing.Size(457, 113);
+            this.tbResponse.Size = new System.Drawing.Size(413, 113);
             this.tbResponse.TabIndex = 2;
             this.tbResponse.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.tbResponse_KeyPress);
             // 
@@ -377,9 +378,9 @@
             // 
             // btnAllOn
             // 
-            this.btnAllOn.Location = new System.Drawing.Point(24, 17);
+            this.btnAllOn.Location = new System.Drawing.Point(17, 17);
             this.btnAllOn.Name = "btnAllOn";
-            this.btnAllOn.Size = new System.Drawing.Size(319, 42);
+            this.btnAllOn.Size = new System.Drawing.Size(326, 42);
             this.btnAllOn.TabIndex = 13;
             this.btnAllOn.Text = "All Relays On";
             this.btnAllOn.UseVisualStyleBackColor = true;
@@ -412,17 +413,17 @@
             this.panel1.Controls.Add(this.groupBox3);
             this.panel1.Location = new System.Drawing.Point(12, 74);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(717, 342);
+            this.panel1.Size = new System.Drawing.Size(717, 332);
             this.panel1.TabIndex = 15;
             this.panel1.Visible = false;
             // 
             // btnClear
             // 
-            this.btnClear.Location = new System.Drawing.Point(510, 218);
+            this.btnClear.Location = new System.Drawing.Point(452, 198);
             this.btnClear.Name = "btnClear";
-            this.btnClear.Size = new System.Drawing.Size(161, 47);
+            this.btnClear.Size = new System.Drawing.Size(239, 47);
             this.btnClear.TabIndex = 15;
-            this.btnClear.Text = "Clear Com Port Response";
+            this.btnClear.Text = "Clear Com Port Response Window";
             this.btnClear.UseVisualStyleBackColor = true;
             this.btnClear.Click += new System.EventHandler(this.btnClear_Click);
             // 
@@ -438,11 +439,20 @@
             this.lblNoComPortsFound.Text = "Error: No COM ports found on this PC";
             this.lblNoComPortsFound.Visible = false;
             // 
+            // listBoxCmdLineParams
+            // 
+            this.listBoxCmdLineParams.FormattingEnabled = true;
+            this.listBoxCmdLineParams.Location = new System.Drawing.Point(29, 423);
+            this.listBoxCmdLineParams.Name = "listBoxCmdLineParams";
+            this.listBoxCmdLineParams.Size = new System.Drawing.Size(674, 95);
+            this.listBoxCmdLineParams.TabIndex = 17;
+            // 
             // frmMain
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(741, 494);
+            this.ClientSize = new System.Drawing.Size(741, 527);
+            this.Controls.Add(this.listBoxCmdLineParams);
             this.Controls.Add(this.lblNoComPortsFound);
             this.Controls.Add(this.panel1);
             this.Controls.Add(this.comboBoxPorts);
@@ -450,6 +460,7 @@
             this.Name = "frmMain";
             this.Text = "Relay Box Manager";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
+            this.Load += new System.EventHandler(this.frmMain_Load);
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
             this.groupBox2.ResumeLayout(false);
@@ -509,6 +520,7 @@
         private System.Windows.Forms.Panel panel1;
         private System.Windows.Forms.Label lblNoComPortsFound;
         private System.Windows.Forms.Button btnClear;
+        private System.Windows.Forms.ListBox listBoxCmdLineParams;
     }
 }
 
